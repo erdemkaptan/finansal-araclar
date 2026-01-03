@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skyline Terminal v23.9</title>
+    <title>Görsel Terminal </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-terminal: #0B0B0B;
+            --bg-terminal: #1e293b;
             --amber: #FFB100;
-            --card-bg: #151515;
-            --border-terminal: #2A2A2A;
+            --card-bg: rgba(51, 65, 85, 0.45);
+            --border-terminal: rgba(255, 255, 255, 0.15);
             --text-main: #E2E8F0;
             --text-dim: #94A3B8;
             --bbg-green: #22C55E;
@@ -21,22 +21,86 @@
             --bbg-blue: #38BDF8;
             --mor:#c837b6
         }
-        body { background-color: var(--bg-terminal); color: var(--text-main); font-family: 'Roboto Mono', monospace; font-size: 0.85rem; }
-        .card { border: 1px solid var(--border-terminal); border-radius: 4px; background-color: var(--card-bg); }
-        .card-header { background-color: #1A1A1A; border-bottom: 1px solid var(--border-terminal); font-weight: 700; color: var(--amber); font-size: 0.7rem; text-transform: uppercase; }
-        .btn-terminal { background-color: transparent; color: var(--amber); border: 1px solid var(--amber); font-weight: 700; font-size: 0.7rem; border-radius: 2px; padding: 3px 10px; transition: all 0.2s; }
-        .btn-terminal:hover { background-color: var(--amber); color: black; }
-        .form-select, .form-control { background-color: #000000; border: 1px solid var(--border-terminal); color: var(--bbg-green); font-family: 'Roboto Mono', monospace; font-size: 0.8rem; }
-        .form-select:focus, .form-control:focus { border-color: var(--amber); background-color: #000000; color: var(--bbg-green); box-shadow: none; }
-        .table { color: var(--text-main); border-color: var(--border-terminal); }
-        .table thead th { color: var(--amber); font-size: 0.65rem; border-bottom: 1px solid var(--border-terminal); background-color: #111; }
-        .table-hover tbody tr:hover { background-color: #1E1E1E; }
-        .kar-pozitif { color: var(--bbg-green) !important; font-weight: 700; }
-        .kar-negatif { color: var(--bbg-red) !important; font-weight: 700; }
-        .summary-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; }
-        .summary-value { font-size: 1.1rem; font-weight: 700; }
-        .fiyat-input { background: #000000; border: 1px solid #333; color: var(--bbg-blue); width: 75px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; }
-        canvas { max-width: 100%; height: auto !important; margin: 10px 0; }
+        body { 
+            background: radial-gradient(circle at 50% -20%, #475569, #0f172a);
+            color: var(--text-main); 
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 0.85rem; 
+            min-height: 100vh;
+        }
+        .card { 
+            border: 1px solid var(--border-terminal); 
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px; 
+            background-color: var(--card-bg); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 177, 0, 0.05);
+            border-color: rgba(255, 177, 0, 0.2);
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Animasyon Gecikmeleri (Sıralı Giriş) */
+        .row.text-center .col-md-3:nth-child(1) .card { animation-delay: 0.1s; }
+        .row.text-center .col-md-3:nth-child(2) .card { animation-delay: 0.2s; }
+        .row.text-center .col-md-3:nth-child(3) .card { animation-delay: 0.3s; }
+        .row.text-center .col-md-3:nth-child(4) .card { animation-delay: 0.4s; }
+        .col-md-3 .card:nth-of-type(1) { animation-delay: 0.5s; }
+        .col-md-3 .card:nth-of-type(2) { animation-delay: 0.6s; }
+        .col-md-9 .card:nth-of-type(1) { animation-delay: 0.7s; }
+        .col-md-9 .card:nth-of-type(2) { animation-delay: 0.8s; }
+
+        .card-header { 
+            background-color: rgba(255, 255, 255, 0.02); 
+            border-bottom: 1px solid var(--border-terminal); 
+            font-weight: 700; 
+            color: var(--amber); 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            border-radius: 12px 12px 0 0;
+            text-shadow: 0 0 8px rgba(255, 177, 0, 0.3);
+        }
+        .btn-terminal { 
+            background-color: rgba(255, 177, 0, 0.05); 
+            color: var(--amber); 
+            border: 1px solid var(--amber); 
+            font-weight: 700; 
+            font-size: 0.7rem; 
+            border-radius: 4px; 
+            padding: 5px 15px; 
+            transition: all 0.3s; 
+            text-decoration: none; 
+            display: inline-flex; 
+            align-items: center; 
+            box-shadow: 0 0 10px rgba(255, 177, 0, 0.1);
+        }
+        .btn-terminal:hover { background-color: var(--amber); color: black; box-shadow: 0 0 20px var(--amber); }
+        .form-select, .form-control { background-color: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-terminal); color: var(--text-main); font-family: 'Roboto Mono', monospace; font-size: 0.8rem; border-radius: 6px; }
+        .form-select:focus, .form-control:focus { border-color: var(--amber); background-color: rgba(0, 0, 0, 0.6); color: var(--amber); box-shadow: 0 0 15px rgba(255, 177, 0, 0.2); }
+        .table { color: var(--text-main); border-color: var(--border-terminal); --bs-table-bg: transparent; }
+        .table thead th { color: var(--amber); font-size: 0.65rem; border-bottom: 1px solid var(--border-terminal); background-color: rgba(255, 255, 255, 0.02); text-shadow: 0 0 5px rgba(255, 177, 0, 0.4); }
+        .table-hover tbody tr:hover { background-color: rgba(255, 177, 0, 0.08); box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
+        .kar-pozitif { color: var(--bbg-green) !important; font-weight: 700; text-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
+        .kar-negatif { color: var(--bbg-red) !important; font-weight: 700; text-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .summary-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .summary-value { font-size: 1.1rem; font-weight: 700; text-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
+        .fiyat-input { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-terminal); color: var(--bbg-blue); width: 75px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; border-radius: 4px; }
+        .fiyat-input:focus { outline: none; border-color: var(--bbg-blue); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+        canvas { max-width: 100%; height: auto !important; margin: 10px 0; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+        
+        /* Ana Sayfa butonu için özel vurgu */
+        .btn-home { border-color: var(--text-dim); color: var(--text-dim); box-shadow: none; }
+        .btn-home:hover { background-color: var(--text-dim); color: #000; border-color: var(--text-dim); box-shadow: 0 0 15px var(--text-dim); }
     </style>
 </head>
 <body>
@@ -45,12 +109,12 @@
     
     <div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-3">
         <div>
-            <h2 class="fw-bold m-0 text-uppercase" style="color: var(--amber); letter-spacing: 1px;">&lt;PORTFÖY YÖNETİM TERMİNALİ&gt;</h2>
+            <h2 class="fw-bold m-0 text-uppercase" style="color: var(--amber); letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 177, 0, 0.4);">&lt;PORTFÖY YÖNETİM TERMİNALİ&gt;</h2>
             <p class="small m-0 text-secondary">GÖRSEL PORTFÖY ANALİZ SİSTEMİ</p>
         </div>
         <div class="d-flex gap-2">
             <a href="index.html" class="btn btn-terminal btn-home">
-                <span style="margin-right: 5px;">&lt;&lt;</span> ANA MENÜ
+                <span style="margin-right: 5px;">&lt;&lt;</span> ANA_MENÜ
             </a>
             <button @click="yedekIndir" class="btn btn-terminal">YEDEK AL</button>
             <button @click="$refs.dosyaInput.click()" class="btn btn-terminal">YÜKLE</button>
@@ -89,8 +153,8 @@
                             <input v-if="secilenSembol === 'MANUEL'" type="text" v-model="yeniVarlik.sembol" class="form-control form-control-sm" placeholder="Sembol...">
                         </div>
                         <div class="row g-2 mb-3">
-                            <div class="col-6"><label class="summary-label">ADET</label><input type="number" step="any" v-model="yeniVarlik.adet" class="form-control form-control-sm"></div>
-                            <div class="col-6"><label class="summary-label">B.FİYAT</label><input type="number" step="any" v-model="yeniVarlik.maliyet" class="form-control form-control-sm"></div>
+                            <div class="col-6"><label class="summary-label">ADET</label><input type="number" step="any" min="0" v-model.number="yeniVarlik.adet" class="form-control form-control-sm"></div>
+                            <div class="col-6"><label class="summary-label">B.FİYAT</label><input type="number" step="any" min="0" v-model.number="yeniVarlik.maliyet" class="form-control form-control-sm"></div>
                         </div>
                         <button type="submit" class="btn btn-terminal w-100">ALIM KAYDET</button>
                     </form>
@@ -123,17 +187,20 @@
                                 <th>DEĞER</th><th>K/Z (₺)</th><th>K/Z %</th><th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody v-if="portfoy.length > 0">
                             <tr v-for="v in portfoy" :key="v.id">
                                 <td class="text-start ps-3"><div class="fw-bold">{{ v.sembol }}</div><div style="color: var(--text-dim); font-size: 0.6rem;">{{ v.tur }}</div></td>
                                 <td>{{ sayiFormat(v.adet) }}</td>
                                 <td style="color: var(--text-dim);">{{ paraFormat(v.maliyet) }}</td>
-                                <td><input type="number" step="any" v-model="v.guncelFiyat" class="fiyat-input"></td>
+                                <td><input type="number" step="any" min="0" v-model.number="v.guncelFiyat" class="fiyat-input"></td>
                                 <td class="fw-bold">{{ paraFormat(v.adet * v.guncelFiyat) }}</td>
                                 <td :class="tutarKZHesapla(v) >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ tutarKZHesapla(v) >= 0 ? '+' : '' }}{{ paraFormat(tutarKZHesapla(v)) }}</td>
                                 <td :class="yuzdeHesapla(v) >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ yuzdeHesapla(v) >= 0 ? '+' : '' }}{{ sayiFormat(yuzdeHesapla(v)) }}%</td>
                                 <td><div class="d-flex gap-1 justify-content-center"><button @click="pozisyonKapatHazirlik(v)" class="btn btn-terminal p-0 px-1" style="font-size: 0.6rem;">SATIŞ</button><button @click="varlikSil(v.id)" class="btn btn-sm text-danger opacity-50 p-0">✕</button></div></td>
                             </tr>
+                        </tbody>
+                        <tbody v-else>
+                            <tr><td colspan="8" class="text-center text-muted py-4" style="font-size: 0.75rem;">-- PORTFÖY BOŞ --</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -146,10 +213,13 @@
                         <thead>
                             <tr><th>TARİH</th><th>SEMBOL</th><th>MALIYET</th><th>NET SATIŞ</th><th>NET K/Z</th><th>%</th><th></th></tr>
                         </thead>
-                        <tbody>
+                        <tbody v-if="kapananPozisyonlar.length > 0">
                             <tr v-for="(p, index) in kapananPozisyonlar" :key="index">
                                 <td style="color: var(--text-dim);">{{ p.tarih }}</td><td class="fw-bold">{{ p.sembol }}</td><td style="color: var(--text-dim);">{{ paraFormat(p.maliyet) }}</td><td>{{ paraFormat(p.satisFiyati) }}</td><td :class="p.karZarar >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ p.karZarar >= 0 ? '+' : '' }}{{ paraFormat(p.karZarar) }}</td><td :class="p.yuzde >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ p.yuzde >= 0 ? '+' : '' }}{{ sayiFormat(p.yuzde) }}%</td><td><button @click="gecmisSil(index)" class="btn btn-sm text-muted">✕</button></td>
                             </tr>
+                        </tbody>
+                        <tbody v-else>
+                            <tr><td colspan="7" class="text-center text-muted py-3" style="font-size: 0.75rem;">-- İŞLEM GEÇMİŞİ YOK --</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -161,7 +231,7 @@
 <script>
     const { createApp } = Vue;
     const STORAGE_KEY = 'portfoy_business_v23';
-    const KOMISYON_ORANI = 0;
+    const KOMISYON_ORANI = 0.000;
 
     createApp({
         data() {
@@ -176,13 +246,13 @@
         },
         computed: {
             siraliSemboller() { return [...this.sembolListesi].sort(); },
-            toplamMaliyet() { return this.portfoy.reduce((t, v) => t + (parseFloat(v.adet) * parseFloat(v.maliyet)), 0); },
-            toplamDeger() { return this.portfoy.reduce((t, v) => t + (parseFloat(v.adet) * (parseFloat(v.guncelFiyat) || 0)), 0); },
+            toplamMaliyet() { return this.portfoy.reduce((t, v) => t + (v.adet * v.maliyet), 0); },
+            toplamDeger() { return this.portfoy.reduce((t, v) => t + (v.adet * (v.guncelFiyat || 0)), 0); },
             toplamAnlikKZ() { return this.toplamDeger - this.toplamMaliyet; },
             toplamGerceklesenKZ() { return this.kapananPozisyonlar.reduce((t, p) => t + p.karZarar, 0); },
             siraliAgirliklar() {
                 if (this.toplamDeger === 0) return [];
-                return this.portfoy.map(v => ({ ...v, yuzde: ((parseFloat(v.adet) * parseFloat(v.guncelFiyat) / this.toplamDeger) * 100).toFixed(2) })).sort((a,b) => b.yuzde - a.yuzde);
+                return this.portfoy.map(v => ({ ...v, yuzde: ((v.adet * v.guncelFiyat / this.toplamDeger) * 100).toFixed(2) })).sort((a,b) => b.yuzde - a.yuzde);
             }
         },
         mounted() { 
@@ -200,7 +270,7 @@
                 if (!ctx) return;
                 
                 const labels = this.portfoy.map(v => v.sembol);
-                const data = this.portfoy.map(v => (v.adet * v.guncelFiyat).toFixed(2));
+                const data = this.portfoy.map(v => (v.adet * (v.guncelFiyat || 0)).toFixed(2));
                 
                 if (this.chart) this.chart.destroy();
                 
@@ -226,8 +296,8 @@
             veriyiKaydet() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ portfoy: this.portfoy, kapananPozisyonlar: this.kapananPozisyonlar })); },
             varlikEkle() { 
                 if(!this.yeniVarlik.sembol) return alert("Seçim yapın.");
-                const netMaliyet = parseFloat(this.yeniVarlik.maliyet) * (1 + KOMISYON_ORANI);
-                this.portfoy.push({ id: Date.now(), ...this.yeniVarlik, sembol: this.yeniVarlik.sembol.toUpperCase(), maliyet: netMaliyet, guncelFiyat: parseFloat(this.yeniVarlik.maliyet) }); 
+                const netMaliyet = this.yeniVarlik.maliyet * (1 + KOMISYON_ORANI);
+                this.portfoy.push({ id: Date.now(), ...this.yeniVarlik, sembol: this.yeniVarlik.sembol.toUpperCase(), maliyet: netMaliyet, guncelFiyat: this.yeniVarlik.maliyet }); 
                 this.yeniVarlik.sembol = ''; this.yeniVarlik.adet = ''; this.yeniVarlik.maliyet = ''; this.secilenSembol = '';
             },
             pozisyonKapatHazirlik(v) {
