@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>TERMİNAL - PORTFÖY ANALİZİ</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body { 
             background-color: #000; 
@@ -135,9 +136,12 @@
     </header>
 
     <div class="controls">
-        <div class="upload-area">
-            JSON_VERİ_YÜKLE
-            <input type="file" id="jsonInput" accept=".json">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="upload-area">
+                VERİ_YÜKLE (JSON/XLSX)
+                <input type="file" id="jsonInput" accept=".json, .xlsx, .xls">
+            </div>
+            <button onclick="downloadSampleExcel()" style="margin-top: 0; font-size: 11px; width: 100%;">ÖRNEK_ŞABLON_İNDİR</button>
         </div>
         <div class="input-box">
             <label>KOMİSYON (ON BİNDE):</label>
@@ -194,16 +198,31 @@
     document.getElementById('jsonInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
+        
+        const extension = file.name.split('.').pop().toLowerCase();
         const reader = new FileReader();
-        reader.onload = (event) => { 
-            try {
-                rawData = JSON.parse(event.target.result); 
-                calculate(); 
-            } catch(e) {
-                alert("JSON dosyası geçersiz.");
-            }
-        };
-        reader.readAsText(file);
+
+        if (extension === 'json') {
+            reader.onload = (event) => { 
+                try {
+                    rawData = JSON.parse(event.target.result); 
+                    calculate(); 
+                } catch(e) {
+                    alert("JSON dosyası geçersiz.");
+                }
+            };
+            reader.readAsText(file);
+        } else if (extension === 'xlsx' || extension === 'xls') {
+            reader.onload = (event) => {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                rawData = XLSX.utils.sheet_to_json(worksheet);
+                calculate();
+            };
+            reader.readAsArrayBuffer(file);
+        }
     });
 
     function recalculate() { if (rawData.length > 0) calculate(); }
@@ -257,6 +276,24 @@
 
         document.getElementById('unrealizedProfit').className = 'stat-value ' + (unrealized >= 0 ? 'profit' : 'loss');
         document.getElementById('psyCost').style.color = psyMaliyet <= 0 ? '#00ff00' : '#ffb800';
+    }
+
+    function downloadSampleExcel() {
+        const sampleData = [
+            { tarih: "25/10/2023", hisse: "THYAO", islem: "Alış", fiyat: 250.50, adet: 100 },
+            { tarih: "26/10/2023", hisse: "THYAO", islem: "Satış", fiyat: 260.00, adet: 50 }
+        ];
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        
+        // Sütun genişlikleri
+        ws['!cols'] = [
+            {wch: 12}, {wch: 10}, {wch: 8}, {wch: 10}, {wch: 8}
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Sablon");
+        XLSX.writeFile(wb, "portfoy_sablon.xlsx");
     }
 </script>
 </body>
