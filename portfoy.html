@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Portföy Terminal </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.1.0/dist/chartjs-chart-treemap.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
             --bg-terminal: #f1f5f9;
@@ -24,7 +26,7 @@
         body { 
             background: linear-gradient(135deg, #f0f9ff 0%, #e2e8f0 100%);
             color: var(--text-main); 
-            font-family: 'Roboto Mono', monospace; 
+            font-family: 'Inter', sans-serif; 
             font-size: 0.95rem; 
             min-height: 100vh;
         }
@@ -74,7 +76,7 @@
         }
         .btn-terminal:hover { background-color: var(--amber); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
-        .form-select, .form-control { background-color: #ffffff; border: 1px solid var(--border-terminal); color: var(--text-main); font-family: 'Roboto Mono', monospace; font-size: 0.9rem; border-radius: 6px; }
+        .form-select, .form-control { background-color: #ffffff; border: 1px solid var(--border-terminal); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.9rem; border-radius: 6px; }
         .form-select:focus, .form-control:focus { border-color: var(--amber); outline: none; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
         
         .table { color: var(--text-main); border-color: var(--border-terminal); --bs-table-bg: transparent; }
@@ -87,14 +89,28 @@
         .summary-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
         .summary-value { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
         
-        .fiyat-input { background: #ffffff; border: 1px solid var(--border-terminal); color: var(--text-main); width: 85px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; border-radius: 4px; padding: 2px; }
+        .fiyat-input { background: #ffffff; border: 1px solid var(--border-terminal); color: var(--text-main); width: 85px; text-align: center; font-family: 'Inter', sans-serif; font-size: 0.9rem; border-radius: 4px; padding: 2px; }
         .fiyat-input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.1); }
         
-        canvas { max-width: 100%; height: auto !important; margin: 10px 0; }
+        canvas { max-width: 100%; margin: 10px 0; }
         
         /* Ana Sayfa butonu için özel vurgu */
         .btn-home { border-color: var(--text-dim); color: var(--text-dim); background: transparent; }
         .btn-home:hover { background-color: var(--text-dim); color: #fff; border-color: var(--text-dim); }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1050;
+            display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-card {
+            background: var(--card-bg); width: 90%; max-width: 400px;
+            border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-terminal);
+            animation: fadeInUp 0.3s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -110,8 +126,9 @@
             <a href="index.html" class="btn btn-terminal btn-home">
                 <span style="margin-right: 5px;">&lt;&lt;</span> ANA_MENÜ
             </a>
-            <button @click="yedekIndir" class="btn btn-terminal">YEDEK AL</button>
-            <button @click="$refs.dosyaInput.click()" class="btn btn-terminal">YÜKLE</button>
+            <button @click="modalAc('csv')" class="btn btn-terminal"><i class="bi bi-file-earmark-spreadsheet"></i> CSV / EXCEL</button>
+            <button @click="yedekIndir" class="btn btn-terminal"><i class="bi bi-download"></i> YEDEK AL</button>
+            <button @click="$refs.dosyaInput.click()" class="btn btn-terminal"><i class="bi bi-upload"></i> YÜKLE</button>
             <input type="file" ref="dosyaInput" style="display: none" @change="yedekYukle" accept=".json">
         </div>
     </div>
@@ -148,6 +165,10 @@
                 <div class="card-body p-3">
                     <form @submit.prevent="varlikEkle">
                         <div class="mb-2">
+                            <label class="summary-label">ALIŞ TARİHİ</label>
+                            <input type="date" v-model="yeniVarlik.alisTarihi" class="form-control form-control-sm">
+                        </div>
+                        <div class="mb-2">
                             <label class="summary-label">VARLIK TÜRÜ</label>
                             <select v-model="yeniVarlik.tur" class="form-select form-select-sm">
                                 <option value="BIST">BIST HİSSE</option><option value="ETF">YATIRIM FONU</option>
@@ -176,7 +197,7 @@
             <div class="card" v-if="portfoy.length > 0">
                 <div class="card-header">PORTFÖY DAĞILIMI</div>
                 <div class="card-body p-2 text-center">
-                    <canvas id="dagilimChart"></canvas>
+                    <div style="height: 250px;"><canvas id="dagilimChart"></canvas></div>
                     <hr class="border-secondary my-2">
                     <div v-for="item in siraliAgirliklar" :key="item.id" class="mb-2 px-2">
                         <div class="d-flex justify-content-between align-items-center small">
@@ -195,24 +216,31 @@
                     <table class="table table-sm table-hover align-middle mb-0 text-center">
                         <thead>
                             <tr>
-                                <th class="text-start ps-3">SEMBOL</th><th>ADET</th><th>NET MALIYET</th><th>GÜNCEL</th>
+                                <th class="text-start ps-3">SEMBOL</th><th>TARİH</th><th>ADET</th><th>NET MALIYET</th><th>GÜNCEL</th>
                                 <th>DEĞER</th><th>K/Z (₺)</th><th>K/Z %</th><th></th>
                             </tr>
                         </thead>
                         <tbody v-if="portfoy.length > 0">
                             <tr v-for="v in portfoy" :key="v.id">
                                 <td class="text-start ps-3"><div class="fw-bold">{{ v.sembol }}</div><div style="color: var(--text-dim); font-size: 0.7rem;">{{ v.tur }}</div></td>
+                                <td style="font-size: 0.8rem; color: var(--text-dim);">{{ tarihFormatla(v.alisTarihi) }}</td>
                                 <td>{{ sayiFormat(v.adet) }}</td>
                                 <td>{{ paraFormat(v.maliyet) }}</td>
                                 <td><input type="number" step="any" min="0" v-model.number="v.guncelFiyat" class="fiyat-input"></td>
                                 <td class="fw-bold">{{ paraFormat(v.adet * v.guncelFiyat) }}</td>
                                 <td :class="tutarKZHesapla(v) >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ tutarKZHesapla(v) >= 0 ? '+' : '' }}{{ paraFormat(tutarKZHesapla(v)) }}</td>
                                 <td :class="yuzdeHesapla(v) >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ yuzdeHesapla(v) >= 0 ? '+' : '' }}{{ sayiFormat(yuzdeHesapla(v)) }}%</td>
-                                <td><div class="d-flex gap-1 justify-content-center"><button @click="pozisyonKapatHazirlik(v)" class="btn btn-terminal p-0 px-1" style="font-size: 0.6rem;">SATIŞ</button><button @click="varlikSil(v.id)" class="btn btn-sm text-danger opacity-50 p-0">✕</button></div></td>
+                                <td>
+                                    <div class="d-flex gap-1 justify-content-center">
+                                        <button @click="modalAc('duzenle', v)" class="btn btn-sm btn-outline-primary border-0 p-1" title="Düzenle"><i class="bi bi-pencil-square"></i></button>
+                                        <button @click="modalAc('satis', v)" class="btn btn-sm btn-outline-success border-0 p-1" title="Satış Yap"><i class="bi bi-cash-coin"></i></button>
+                                        <button @click="varlikSil(v.id)" class="btn btn-sm btn-outline-danger border-0 p-1" title="Sil"><i class="bi bi-trash"></i></button>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                         <tbody v-else>
-                            <tr><td colspan="8" class="text-center text-muted py-4" style="font-size: 0.75rem;">-- PORTFÖY BOŞ --</td></tr>
+                            <tr><td colspan="9" class="text-center text-muted py-4" style="font-size: 0.75rem;">-- PORTFÖY BOŞ --</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -223,18 +251,64 @@
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0 text-center" style="font-size: 0.75rem;">
                         <thead>
-                            <tr><th>TARİH</th><th>SEMBOL</th><th>MALIYET</th><th>NET SATIŞ</th><th>NET K/Z</th><th>%</th><th></th></tr>
+                            <tr><th>ALIŞ T.</th><th>SATIŞ T.</th><th>SEMBOL</th><th>MALIYET</th><th>NET SATIŞ</th><th>NET K/Z</th><th>%</th><th></th></tr>
                         </thead>
                         <tbody v-if="kapananPozisyonlar.length > 0">
                             <tr v-for="(p, index) in kapananPozisyonlar" :key="index">
-                                <td style="color: var(--text-dim);">{{ p.tarih }}</td><td class="fw-bold">{{ p.sembol }}</td><td style="color: var(--text-dim);">{{ paraFormat(p.maliyet) }}</td><td>{{ paraFormat(p.satisFiyati) }}</td><td :class="p.karZarar >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ p.karZarar >= 0 ? '+' : '' }}{{ paraFormat(p.karZarar) }}</td><td :class="p.yuzde >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ p.yuzde >= 0 ? '+' : '' }}{{ sayiFormat(p.yuzde) }}%</td><td><button @click="gecmisSil(index)" class="btn btn-sm text-muted">✕</button></td>
+                                <td style="color: var(--text-dim);">{{ tarihFormatla(p.alisTarihi) }}</td><td style="color: var(--text-dim);">{{ tarihFormatla(p.satisTarihi || p.tarih) }}</td><td class="fw-bold">{{ p.sembol }}</td><td style="color: var(--text-dim);">{{ paraFormat(p.maliyet) }}</td><td>{{ paraFormat(p.satisFiyati) }}</td><td :class="p.karZarar >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ p.karZarar >= 0 ? '+' : '' }}{{ paraFormat(p.karZarar) }}</td><td :class="p.yuzde >= 0 ? 'kar-pozitif' : 'kar-negatif'">{{ p.yuzde >= 0 ? '+' : '' }}{{ sayiFormat(p.yuzde) }}%</td><td><button @click="gecmisSil(index)" class="btn btn-sm btn-outline-danger border-0 p-1"><i class="bi bi-trash"></i></button></td>
                             </tr>
                         </tbody>
                         <tbody v-else>
-                            <tr><td colspan="7" class="text-center text-muted py-3" style="font-size: 0.75rem;">-- İŞLEM GEÇMİŞİ YOK --</td></tr>
+                            <tr><td colspan="8" class="text-center text-muted py-3" style="font-size: 0.75rem;">-- İŞLEM GEÇMİŞİ YOK --</td></tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div v-if="aktifModal" class="modal-overlay" @click.self="modalKapat">
+        <div class="modal-card">
+            <div class="card-header d-flex justify-content-between align-items-center p-3">
+                <span>{{ aktifModal === 'satis' ? 'POZİSYON KAPAT' : (aktifModal === 'duzenle' ? 'VARLIK DÜZENLE' : 'CSV / EXCEL İŞLEMLERİ') }}</span>
+                <button @click="modalKapat" class="btn-close small"></button>
+            </div>
+            <div class="card-body p-3">
+                <div v-if="aktifModal === 'csv'">
+                    <h6 class="border-bottom pb-2 mb-3" style="font-size: 0.8rem; color: var(--text-dim);">DIŞA AKTAR (EXPORT)</h6>
+                    <div class="d-grid gap-2 mb-4">
+                        <button @click="csvDisaAktar('portfoy')" class="btn btn-outline-secondary btn-sm text-start">📄 AKTİF PORTFÖY (.CSV)</button>
+                        <button @click="csvDisaAktar('gecmis')" class="btn btn-outline-secondary btn-sm text-start">📄 GEÇMİŞ İŞLEMLER (.CSV)</button>
+                    </div>
+                    <h6 class="border-bottom pb-2 mb-3" style="font-size: 0.8rem; color: var(--text-dim);">İÇE AKTAR (IMPORT)</h6>
+                    <div class="d-grid gap-2">
+                        <button @click="$refs.csvPortfoyInput.click()" class="btn btn-outline-secondary btn-sm text-start">📥 PORTFÖY YÜKLE (.CSV)</button>
+                        <button @click="$refs.csvGecmisInput.click()" class="btn btn-outline-secondary btn-sm text-start">📥 GEÇMİŞ YÜKLE (.CSV)</button>
+                    </div>
+                    <input type="file" ref="csvPortfoyInput" style="display: none" @change="csvIceAktar($event, 'portfoy')" accept=".csv">
+                    <input type="file" ref="csvGecmisInput" style="display: none" @change="csvIceAktar($event, 'gecmis')" accept=".csv">
+                </div>
+                <form v-else @submit.prevent="aktifModal === 'satis' ? satisYap() : varlikGuncelle()">
+                    <!-- Satış Formu -->
+                    <div v-if="aktifModal === 'satis'">
+                        <div class="mb-3"><label class="summary-label">SATIŞ TARİHİ</label><input type="date" v-model="modalVeri.tarih" class="form-control" required></div>
+                        <div class="mb-3"><label class="summary-label">SATIŞ FİYATI (BİRİM)</label><input type="number" step="any" v-model.number="modalVeri.fiyat" class="form-control" required></div>
+                        <div class="alert alert-light border small mb-0">
+                            <div class="d-flex justify-content-between"><span>Adet:</span> <strong>{{ sayiFormat(islemVarlik.adet) }}</strong></div>
+                            <div class="d-flex justify-content-between"><span>Toplam:</span> <strong>{{ paraFormat(islemVarlik.adet * modalVeri.fiyat) }}</strong></div>
+                        </div>
+                    </div>
+                    <!-- Düzenleme Formu -->
+                    <div v-if="aktifModal === 'duzenle'">
+                        <div class="mb-3"><label class="summary-label">ALIŞ TARİHİ</label><input type="date" v-model="modalVeri.alisTarihi" class="form-control" required></div>
+                        <div class="mb-3"><label class="summary-label">BİRİM MALİYET</label><input type="number" step="any" v-model.number="modalVeri.maliyet" class="form-control" required></div>
+                        <div class="mb-3"><label class="summary-label">ADET</label><input type="number" step="any" v-model.number="modalVeri.adet" class="form-control" required></div>
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-terminal">{{ aktifModal === 'satis' ? 'SATIŞI ONAYLA' : 'GÜNCELLE' }}</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -251,9 +325,14 @@
                 chart: null,
                 secilenSembol: '',
                 sembolListesi: ["AEFES", "AKBNK", "ALARK", "ARCLK", "ASELS", "ASTOR", "BIMAS", "BRSAN", "CCOLA", "CIMSA", "DOAS", "DOHOL", "DSTKF", "EKGYO", "ENKAI", "EREGL", "FROTO", "GARAN", "GUBRF", "HALKB", "HEKTS", "ISCTR", "KCHOL", "KONTR", "KRDMD", "KUYAS", "MAVI", "MGROS", "MIATK", "OYAKC", "PETKM", "PGSUS", "SAHOL", "SASA", "SISE", "SOKM", "TAVHL", "TCELL", "THYAO", "TKFEN", "TOASO", "TRALT", "TRMET", "TSKB", "TTKOM", "TUPRS", "ULKER", "VAKBN", "GLDTR", "ALTINS1", "KLU_PPF"],
-                yeniVarlik: { tur: 'BIST', sembol: '', adet: '', maliyet: '' },
+                yeniVarlik: { tur: 'BIST', sembol: '', adet: '', maliyet: '', alisTarihi: new Date().toISOString().split('T')[0] },
                 portfoy: [],
-                kapananPozisyonlar: []
+                aramaMetni: '',
+                siralama: { alan: null, yon: 'asc' },
+                kapananPozisyonlar: [],
+                aktifModal: null,
+                modalVeri: {},
+                islemVarlik: null
             }
         },
         computed: {
@@ -265,6 +344,33 @@
             siraliAgirliklar() {
                 if (this.toplamDeger === 0) return [];
                 return this.portfoy.map(v => ({ ...v, yuzde: ((v.adet * v.guncelFiyat / this.toplamDeger) * 100).toFixed(2) })).sort((a,b) => b.yuzde - a.yuzde);
+            },
+            filtrelenmisPortfoy() {
+                let veri = [...this.portfoy];
+                
+                // Arama Filtresi
+                if (this.aramaMetni) {
+                    const ara = this.aramaMetni.toUpperCase();
+                    veri = veri.filter(v => v.sembol.includes(ara) || v.tur.includes(ara));
+                }
+
+                // Sıralama
+                if (this.siralama.alan) {
+                    veri.sort((a, b) => {
+                        let valA = a[this.siralama.alan];
+                        let valB = b[this.siralama.alan];
+
+                        // Özel hesaplanan alanlar için mapping
+                        if (this.siralama.alan === 'deger') { valA = a.adet * a.guncelFiyat; valB = b.adet * b.guncelFiyat; }
+                        else if (this.siralama.alan === 'kz') { valA = (a.guncelFiyat - a.maliyet) * a.adet; valB = (b.guncelFiyat - b.maliyet) * b.adet; }
+                        else if (this.siralama.alan === 'yuzde') { valA = (a.guncelFiyat - a.maliyet) / a.maliyet; valB = (b.guncelFiyat - b.maliyet) / b.maliyet; }
+
+                        if (valA < valB) return this.siralama.yon === 'asc' ? -1 : 1;
+                        if (valA > valB) return this.siralama.yon === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+                return veri;
             }
         },
         mounted() { 
@@ -281,51 +387,102 @@
                 const ctx = document.getElementById('dagilimChart');
                 if (!ctx) return;
                 
-                const labels = this.portfoy.map(v => v.sembol);
-                const data = this.portfoy.map(v => (v.adet * (v.guncelFiyat || 0)).toFixed(2));
+                const treeData = this.portfoy.map(v => ({ sembol: v.sembol, deger: v.adet * (v.guncelFiyat || 0) })).filter(i => i.deger > 0);
+                const colors = ['#38BDF8', '#22C55E', '#FFB100', '#EF4444', '#A855F7', '#EC4899', '#64748B', '#0EA5E9', '#84CC16', '#F59E0B'];
                 
-                if (this.chart) this.chart.destroy();
-                
+                if (this.chart) {
+                    this.chart.data.datasets[0].tree = treeData;
+                    this.chart.update();
+                    return;
+                }
+
                 this.chart = new Chart(ctx, {
-                    type: 'doughnut',
+                    type: 'treemap',
                     data: {
-                        labels: labels,
                         datasets: [{
-                            data: data,
-                            backgroundColor: ['#38BDF8', '#22C55E', '#FFB100', '#EF4444', '#A855F7', '#EC4899', '#64748B'],
-                            borderWidth: 0,
-                            hoverOffset: 10
+                            tree: treeData,
+                            key: 'deger',
+                            groups: ['sembol'],
+                            backgroundColor: (c) => c.type !== 'data' ? 'transparent' : colors[c.dataIndex % colors.length],
+                            spacing: 1,
+                            borderWidth: 1,
+                            borderColor: '#fff',
+                            labels: {
+                                display: true,
+                                color: '#fff',
+                                font: { family: 'Roboto Mono', size: 11, weight: 'bold' },
+                                formatter: (c) => c.raw ? [c.raw.g, `%${(this.toplamDeger > 0 ? (c.raw.v / this.toplamDeger * 100).toFixed(1) : 0)}`, new Intl.NumberFormat('tr-TR', { notation: "compact", compactDisplay: "short", maximumFractionDigits: 1 }).format(c.raw.v)] : ''
+                            }
                         }]
                     },
                     options: {
-                        cutout: '70%',
-                        plugins: { legend: { display: false } },
-                        animation: { animateRotate: true }
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: { callbacks: { title: (i) => i[0].raw.g, label: (i) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(i.raw.v) } }
+                        }
                     }
                 });
+            },
+            sirala(alan) {
+                if (this.siralama.alan === alan) {
+                    this.siralama.yon = this.siralama.yon === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.siralama.alan = alan;
+                    this.siralama.yon = 'desc'; // İlk tıklamada genelde en yükseği görmek isteriz
+                }
+            },
+            siralamaIkonu(alan) {
+                if (this.siralama.alan !== alan) return 'bi-arrow-down-up text-muted opacity-25 small';
+                return this.siralama.yon === 'asc' ? 'bi-sort-up text-primary' : 'bi-sort-down-alt text-primary';
             },
             sembolKontrol() { this.yeniVarlik.sembol = this.secilenSembol !== 'MANUEL' ? this.secilenSembol : ''; },
             veriyiKaydet() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ portfoy: this.portfoy, kapananPozisyonlar: this.kapananPozisyonlar })); },
             varlikEkle() { 
-                if(!this.yeniVarlik.sembol) return alert("Seçim yapın.");
+                if(!this.yeniVarlik.sembol) return alert("Lütfen bir sembol seçin veya girin.");
+                if(!this.yeniVarlik.adet || this.yeniVarlik.adet <= 0) return alert("Geçerli bir adet giriniz.");
+                if(!this.yeniVarlik.maliyet || this.yeniVarlik.maliyet < 0) return alert("Geçerli bir maliyet giriniz.");
+
                 const netMaliyet = this.yeniVarlik.maliyet * (1 + KOMISYON_ORANI);
                 this.portfoy.push({ id: Date.now(), ...this.yeniVarlik, sembol: this.yeniVarlik.sembol.toUpperCase(), maliyet: netMaliyet, guncelFiyat: this.yeniVarlik.maliyet }); 
-                this.yeniVarlik.sembol = ''; this.yeniVarlik.adet = ''; this.yeniVarlik.maliyet = ''; this.secilenSembol = '';
+                this.yeniVarlik.sembol = ''; this.yeniVarlik.adet = ''; this.yeniVarlik.maliyet = ''; this.secilenSembol = ''; this.yeniVarlik.alisTarihi = new Date().toISOString().split('T')[0];
             },
-            pozisyonKapatHazirlik(v) {
-                const tarih = prompt("Tarih:", new Date().toLocaleDateString('tr-TR'));
-                const satis = prompt(`Brüt Satış:`, v.guncelFiyat);
-                if (tarih && satis) {
-                    const netSatis = parseFloat(satis) * (1 - KOMISYON_ORANI);
-                    const kZ = (netSatis - v.maliyet) * v.adet;
-                    this.kapananPozisyonlar.unshift({ tarih, sembol: v.sembol, maliyet: v.maliyet, satisFiyati: netSatis, karZarar: kZ, yuzde: (((netSatis - v.maliyet) / v.maliyet) * 100).toFixed(2) });
-                    this.portfoy = this.portfoy.filter(i => i.id !== v.id);
+            modalAc(tip, varlik) {
+                this.aktifModal = tip;
+                this.islemVarlik = varlik;
+                if (tip === 'satis') this.modalVeri = { tarih: new Date().toISOString().split('T')[0], fiyat: varlik.guncelFiyat };
+                else if (tip === 'duzenle') this.modalVeri = { ...varlik };
+                else if (tip === 'csv') this.modalVeri = {};
+            },
+            modalKapat() { this.aktifModal = null; this.modalVeri = {}; this.islemVarlik = null; },
+            satisYap() {
+                if (!this.islemVarlik || !this.modalVeri.fiyat) return;
+                const v = this.islemVarlik;
+                const netSatis = parseFloat(this.modalVeri.fiyat) * (1 - KOMISYON_ORANI);
+                const kZ = (netSatis - v.maliyet) * v.adet;
+                this.kapananPozisyonlar.unshift({ satisTarihi: this.modalVeri.tarih, alisTarihi: v.alisTarihi, sembol: v.sembol, adet: v.adet, maliyet: v.maliyet, satisFiyati: netSatis, karZarar: kZ, yuzde: (((netSatis - v.maliyet) / v.maliyet) * 100).toFixed(2) });
+                this.portfoy = this.portfoy.filter(i => i.id !== v.id);
+                this.modalKapat();
+            },
+            varlikGuncelle() {
+                const idx = this.portfoy.findIndex(v => v.id === this.islemVarlik.id);
+                if (idx !== -1) {
+                    this.portfoy[idx].alisTarihi = this.modalVeri.alisTarihi;
+                    this.portfoy[idx].maliyet = this.modalVeri.maliyet;
+                    this.portfoy[idx].adet = this.modalVeri.adet;
                 }
+                this.modalKapat();
             },
             varlikSil(id) { if(confirm('Sil?')) this.portfoy = this.portfoy.filter(v => v.id !== id); },
             gecmisSil(index) { if(confirm('Sil?')) this.kapananPozisyonlar.splice(index, 1); },
             paraFormat(d) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 }).format(d || 0); },
             sayiFormat(d) { return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(d || 0); },
+            tarihFormatla(t) {
+                if (!t) return '-';
+                if (String(t).includes('.')) return t; // Zaten formatlıysa (örn: prompt'tan gelen)
+                const d = new Date(t);
+                return isNaN(d) ? t : d.toLocaleDateString('tr-TR');
+            },
             tutarKZHesapla(v) { return (v.guncelFiyat - v.maliyet) * v.adet; },
             yuzdeHesapla(v) { return v.maliyet === 0 ? 0 : (((v.guncelFiyat - v.maliyet) / v.maliyet) * 100).toFixed(2); },
             yedekIndir() {
@@ -335,7 +492,43 @@
                 a.href = URL.createObjectURL(new Blob([JSON.stringify({ portfoy: this.portfoy, kapananPozisyonlar: this.kapananPozisyonlar })], { type: 'application/json' }));
                 a.download = `${d}_terminal_yedek.json`; a.click();
             },
-            yedekYukle(e) { const f = e.target.files[0]; const r = new FileReader(); r.onload = (ev) => { const data = JSON.parse(ev.target.result); this.portfoy = data.portfoy || []; this.kapananPozisyonlar = data.kapananPozisyonlar || []; this.veriyiKaydet(); this.grafikGuncelle(); }; r.readAsText(f); }
+            yedekYukle(e) { const f = e.target.files[0]; const r = new FileReader(); r.onload = (ev) => { const data = JSON.parse(ev.target.result); this.portfoy = data.portfoy || []; this.kapananPozisyonlar = data.kapananPozisyonlar || []; this.veriyiKaydet(); this.grafikGuncelle(); }; r.readAsText(f); },
+            csvDisaAktar(tip) {
+                let veri, basliklar, dosyaAdi;
+                if (tip === 'portfoy') {
+                    veri = this.portfoy.map(v => ({ SEMBOL: v.sembol, TUR: v.tur, ADET: v.adet, MALIYET: v.maliyet, TARIH: v.alisTarihi }));
+                    basliklar = ['SEMBOL', 'TUR', 'ADET', 'MALIYET', 'TARIH']; dosyaAdi = 'portfoy_aktif.csv';
+                } else {
+                    veri = this.kapananPozisyonlar.map(v => ({ SEMBOL: v.sembol, ADET: v.adet || 0, ALIS_TARIH: v.alisTarihi, SATIS_TARIH: v.satisTarihi, MALIYET: v.maliyet, SATIS_FIYATI: v.satisFiyati, KAR_ZARAR: v.karZarar }));
+                    basliklar = ['SEMBOL', 'ADET', 'ALIS_TARIH', 'SATIS_TARIH', 'MALIYET', 'SATIS_FIYATI', 'KAR_ZARAR']; dosyaAdi = 'portfoy_gecmis.csv';
+                }
+                const csv = [basliklar.join(';'), ...veri.map(r => basliklar.map(k => { let v = r[k]; if(typeof v === 'number') v = v.toString().replace('.', ','); return JSON.stringify(v || ''); }).join(';'))].join('\r\n');
+                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })); a.download = dosyaAdi; a.click(); this.modalKapat();
+            },
+            csvIceAktar(e, tip) {
+                const f = e.target.files[0]; if (!f) return;
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    const rows = ev.target.result.split(/\r\n|\n/);
+                    const headers = rows[0].split(';').map(h => h.replace(/['"]+/g, '').trim());
+                    const yeni = [];
+                    for (let i = 1; i < rows.length; i++) {
+                        if (!rows[i].trim()) continue;
+                        const cols = rows[i].split(';').map(c => c.replace(/['"]+/g, '').trim());
+                        const o = {}; headers.forEach((h, x) => { let v = cols[x]; if(v && v.includes(',') && !isNaN(v.replace(',', '.'))) v = parseFloat(v.replace(',', '.')); o[h] = v; });
+                        if (tip === 'portfoy' && o.SEMBOL) {
+                            yeni.push({ id: Date.now() + i, sembol: o.SEMBOL, tur: o.TUR || 'BIST', adet: Number(o.ADET), maliyet: Number(o.MALIYET), alisTarihi: o.TARIH, guncelFiyat: Number(o.MALIYET) });
+                        } else if (tip === 'gecmis' && o.SEMBOL) {
+                            const m = Number(o.MALIYET), s = Number(o.SATIS_FIYATI);
+                            yeni.push({ sembol: o.SEMBOL, adet: Number(o.ADET || 0), alisTarihi: o.ALIS_TARIH, satisTarihi: o.SATIS_TARIH, maliyet: m, satisFiyati: s, karZarar: Number(o.KAR_ZARAR), yuzde: m ? (((s - m) / m) * 100).toFixed(2) : 0 });
+                        }
+                    }
+                    if (tip === 'portfoy') this.portfoy = [...this.portfoy, ...yeni];
+                    else this.kapananPozisyonlar = [...this.kapananPozisyonlar, ...yeni];
+                    this.veriyiKaydet(); this.modalKapat(); e.target.value = '';
+                };
+                r.readAsText(f);
+            }
         }
     }).mount('#app');
 </script>
